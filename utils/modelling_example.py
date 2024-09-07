@@ -1,0 +1,62 @@
+import streamlit as st
+import os
+
+def modelling_example():
+    current_dir = os.path.dirname(os.path.abspath(__name__))
+    st.markdown("### Rudimentary and Representative ICH Modelling")
+    st.markdown("""
+                In an efficient market sense, we put substantial trust in the long-run accuracy of bookmaker odds as probabilistic forecasts for event outcomes. Indeed, we do not ourselves model event outcomes and then compare our estimates to those of bookmakers; rather, we take the probabilities implied by bookmaker odds as more or less fundamentally true. This assumption primarily allows us to avoid creating models of our own -- which would likely be no more accurate than those of the highly-competitive sports forecasting industry -- but it also allows us to analyse the implications of the bookmaker prices, to gain a higher-dimension understanding of the event in question. The following is a set of examples of the type of insight that we derive from bookmaker odds, that we can then refine and leverage in our models.\n
+                In association football (football, soccer), for all big games and most second-tier games, select bookmakers offer odds on the Time of First Goal market, where a bettor can back a ten-minute interval where they believe the first goal of the game will be scored. As I write this, July 26 2023, per Oddschecker.com, the following are the most competitive odds, in decimal form, for the August 12 Sheffield United versus Crystal Palace game from the opening Premier League weekend:
+                """)
+    st.image(os.path.join(current_dir, "tofg.png"))
+    st.markdown("""
+                Practically, if I believe that the first goal will come in minute 13, then I will bet on the 11-20 minute range and get a return of five and a half times my stake if the first goal does indeed arrive in that span.\n
+                We are, of course, more interested in the informational content available in these odds. We can, namely, hence derive a cumulative probability distribution for the arrival of the first goal in the game. The probability of the first goal arriving in the first ten minutes is, of course, the marginless implied probability in the odds for that timespan. The implied probability is 1/5=0.2. Removing the bookmaker's margin (using Shin standardisation (Shin 1991; Salani 1994) which is arguably the most accurate method of removing bookmaker margins (Strumbelj 2014; Smith, Paton, Williams 2009)) this becomes 0.177: there is roughly an 18% chance of a goal being scored in the first ten minutes. Similarly, the probability that the first goal is in the first twenty minutes must be equal to the probability that it arrives in the first ten minutes plus the probability that it arrives between minutes eleven and twenty. The marginless implied probability of the first goal arriving between minutes eleven and twenty is 0.160. Thus, the probability of seeing a goal in the first twenty minutes is 0.177 + 0.160 = 0.337. Using the same reasoning, we can plot the probability of a goal having been scored $g(t)$ at each multiple-of-ten minute and find a line of best fit, constrained to go through the origin as $g(0)=0$:
+                """)
+    st.image(os.path.join(current_dir, "she_cry_tofg.png"))
+    st.markdown("""Clearly the fit of a simple two-parameter linear regression is rather good. There is a clear trend of increasing cumulative probability with a decreasing rate of change similar to that of a cumulative exponential distribution. Indeed, how does this derivation of $g(t)$ compare to what would be found using an exponential distribution model? The following shows the odds for the Total Goals Exact market for the same game:""")
+    st.image(os.path.join(current_dir, "tge.png"))
+    st.markdown("Hence, the expected number of goals in the game is 2.41. Setting the expected game length to an arbitrary but reasonable 95 minutes, an exponential distribution would have a scale parameter of 95/2.41, which gives:")
+    st.image(os.path.join(current_dir, "tofg_exponential.png"))
+    st.markdown("The goal-scoring rate is highly exaggerated in the first 45 minutes or so with an exponential distribution. This is not solely a consequence of the arbitrarily chosen 95-minute game length. We have to go to something like 115 minutes in a game to get a similar distribution across roughly the first 45 minutes:")
+    st.image(os.path.join(current_dir, "tofg_exponential_fit.png"))
+    st.markdown("""
+                But the obvious issue here is that the exponential distribution subsequently completely undersells the probability of goals in the second 45 minutes. Going back to the plot with the reasonable 95 minutes in a game, there seems to be a kind of dependency effect. A fundamental assumption of the exponential distribution is independent trials, where whether a goal is scored in one minute or not has no impact on whether a goal is scored in the next. This is clearly not the case in football and as such the distribution of goals differs from an independence model. Over the full game, the goal expectancy is similar -- $g(t)$ from the exponential model is roughly the same as $g(t)$f from the quadratic model at $t=90$ -- but it is early in the game where the independence/dependence dichotomy makes a difference. We return to dependency in goalscoring shortly.\n
+                Regarding solely the $g(t)$ derived from the Time of First Goal market, which is what we are interested in, for our purposes here, we care only for the first half or so of the game, so the following shows $g(t)$ with only the points for the first 50 minutes of the game:
+                """)
+    st.image(os.path.join(current_dir, "gt_fit.png"))
+    st.markdown("""
+                Where the fit is essentially perfect. Clearly, $g(t)$, if we believe bookmaker odds to be accurate on average as probabilistic forecasts -- which we do at ICH -- appears a valid function for describing the probability of a goal having been scored at a given time t throughout a game. This is thus one primary insight that we can gain simply from interpreting the odds on a higher level.\n
+                A second insight is the expected length, in minutes, of the first half of the Sheffield United versus Crystal Palace game. Taken at the same time as the odds above for Time of First Goal, the Total Goals - 1st Half market allows the bettor to gamble on whether the number of goals scored in the first half will be over or under x.5:
+                """)
+    st.image(os.path.join(current_dir, "fhou.png"))
+    st.markdown(r"""
+                The line that particularly interests us here is the over/under 0.5 total first-half goals. The marginless implied probability of over 0.5 goals is 0.652, meaning that there is a 65.2% chance that there will be a goal scored by half time. We can thus find the expected length of the first half by finding the value of $t$ which sets $g(t)$ -- the probability that there has been a goal at time $t$ -- equal to 0.652. This gives a value for t equal to 45.92, with the game having just shy of one minute of additional time in expectation.
+                
+                Finally, it is worth considering what information $g(t)$ contains, or rather, where its information is relevant. $g(t)$ shows the distribution of the first goal in the game. This means that it is not necessarily correct to assume, after the first goal is scored, that the second goal will be distributed by the same $g(t)$: indeed, this seems reasonable intuitively, as if a team scores a goal, the other team will likely press forward for an equaliser, increasing the probability of a goal at both ends as they stretch themselves thin defensively. This is what we observed above with the exponential distribution not being a good fit, as the independence assumption is violated. The final insight we can gain from these odds, then, is how $g(t)$ alters with the advent of the game's first goal.
+                
+                Refer again to the Total Goals - 1st Half odds from above. With odds of 1.36, the marginless implied probability of there being under 1.5 goals in the first half between Sheffield United and Crystal Palace is 0.721. There are two avenues where this bet wins: there are no goals in the first half, there is one goal in the first half. The probability of the former is readily obtained, simply $1 - g_0(t_{HT})$, where $g_0(t)$ is $g(t)$ when there have been no goals scored and tHT is the expected length of the first half in minutes, in this case 45.92. The latter, not so much: to have one goal exactly, a goal must be scored at some minute $t$, and then there must be no goals be scored in the remaining $t_{HT} - t$ minutes. However, by setting up $g_1(t)$ as the cumulative probability distribution of a goal having been scored in a given number of minutes, given that a goal has already been scored in the game, we can integrate over the first goal being scored at each $t$ and then find the probability $1 - g_1(t_{HT} - t)$ that the half is scoreless thereafter. Thus, the following equation:
+                
+                $P(u_{1.5})=1-g_0(t_{HT})+\int_0^{t_{HT}}g_0'(t)(1-g_1(t_{HT}-t))dt$
+                
+                with which we can solve for the parameters $a$ and $b$ in $g_1(t)=at^2+bt$. We do so with a set of constraints:
+                - $a\leq 0$
+                - $b\geq 0$
+                - $-\frac{b}{2a}\geq 60$ (the $t$-coordinate of the vertex must be above $t=60$)
+                - $g_1(60)\leq60$ (the value of $g_1(t)$ at $t=60$ must be a valid probability)
+                
+                These are all necessary to ensure that $g_1(t)$ has the same shape as $g_0(t)$, that characteristic exponential-like shape. Which, indeed, is what we get:""")
+    st.image(os.path.join(current_dir, "tofg_fit_two.png"))
+    st.markdown(r"""
+                The top panel plots both_$g_0(t)$ and $g_1(t)$, where $g_1(t)$ is clearly higher than $g_0(t)$. The bottom panel plots this difference between them, where it is interesting to see that, in this game between Sheffield United and Crystal Palace, if a goal has been scored, another goal is roughly five or six percent more likely in the next 45 minutes than if there has not been a goal. Clearly, a goal being scored increases the probability of another being scored quite significantly.
+
+                We need not necessarily end here with our derivations of $g_X(t)$. Using the same logic as above, for instance, we could derive $g_2(t)$ via:
+
+                $P(u_{2.5})=P(u_{1.5})+\int_0^{t_{HT}}\int_0^{t_{HT}-t_1}g_0'(t_1)g_1'(t_2)(1-g_2(t_{HT}-t_1-t_2))dt_2dt_1$
+
+                Under 2.5 goals in the first half is achieved if there are zero or one goals scored in the first half -- captured by $P(u_{1.5})$, which, just as with $P(u_{2.5})$, we can obtain directly from the odds -- or if there are exactly two goals scored. This latter quantity is captured by the double integral. For there to be two goals exactly, we have one goal scored at some time $t_1$, we then have a second goal scored at some time $t_2$ in the remaining $t_{HT} - t_1$ time of the half, before no more goals being scored in the $t_{HT} - t_1 - t_2$ time remaining after the second goal. By integrating over $t_1$ and $t_2$, we can, just as we did above with $g_1(t)$, find the parameters for $g_2(t)$: the cumulative probability distribution of the next goal having been scored, given that we have seen two goals already in the game. Using the same constraints for the optimisation of the $g_2(t)$ parameters as for $g_1(t)$, we obtain:""")
+    st.image(os.path.join(current_dir, "tofg_fit_three.png"))
+    st.markdown("""
+                where, again, the probability of having seen a goal at any time from now $t$ increases with the number of goals that have been scored already, although this increase from $g_1(t)$ to $g_2(t)$ is less than the increase from $g_0(t)$ to $g_1(t)$. We can of course continue with a triple integral for $g_3(t)$, but the approach is much the same, with little new to learn.
+
+                These are basic examples of the variety of insights that can be derived from bookmaker odds. At ICH, we have made it our objective to leverage these insights to create accurate exploitive models which can foresee intertemporal opportunities to profit from price movements.""")
